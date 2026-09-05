@@ -49,7 +49,7 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
 
     val connectionState: StateFlow<ConnectionState> = wsManager.connectionState
 
-    var relayServerUrl = MutableStateFlow("https://relay.kunglab.online")
+    var relayServerUrl = MutableStateFlow("https://relay.example.com")
     var authToken = MutableStateFlow("")
 
     private val _currentUser = MutableStateFlow<UserProfile?>(null)
@@ -88,13 +88,13 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
     )
     val sessions: StateFlow<List<ChatSession>> = _sessions.asStateFlow()
 
-    var antigravityUrlInput = MutableStateFlow("https://antigravity.google.com/r/384e5c79-d94a-4948-be65-0d39ae06e2a5-v2")
+    var antigravityUrlInput = MutableStateFlow("")
     private val _activeWebUrl = MutableStateFlow<String?>(null)
     val activeWebUrl: StateFlow<String?> = _activeWebUrl.asStateFlow()
 
     var hostInput = MutableStateFlow("127.0.0.1")
     var portInput = MutableStateFlow("8080")
-    var tokenInput = MutableStateFlow("antigravity-secret-key")
+    var tokenInput = MutableStateFlow("")
     var chatInput = MutableStateFlow("")
 
     fun openAntigravityUrl(url: String) {
@@ -251,7 +251,7 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
     fun connectToDevice(device: DiscoveredDevice) {
         viewModelScope.launch {
             if (authToken.value.isBlank()) {
-                val email = _currentUser.value?.email ?: (device.email ?: "kung66130@gmail.com")
+                val email = _currentUser.value?.email ?: (device.email ?: "user@example.com")
                 withContext(Dispatchers.IO) {
                     try {
                         val authEndpoint = "${relayServerUrl.value.trim().removeSuffix("/")}/api/auth/google"
@@ -273,7 +273,7 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
             // Save for automatic reconnect (One-Time Pairing)
             prefs.edit()
                 .putString(PREF_DEVICE_ID, device.deviceId)
-                .putString(PREF_EMAIL, device.email ?: _currentUser.value?.email ?: "kung66130@gmail.com")
+                .putString(PREF_EMAIL, device.email ?: _currentUser.value?.email ?: "user@example.com")
                 .putString(PREF_TOKEN, authToken.value)
                 .putString(PREF_NAME, device.deviceName)
                 .apply()

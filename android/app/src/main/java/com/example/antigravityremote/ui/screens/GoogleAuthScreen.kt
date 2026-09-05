@@ -91,26 +91,14 @@ fun GoogleAuthScreen(
     var isEnteringCustomUrl by remember { mutableStateOf(false) }
     var customEmailInput by remember { mutableStateOf("") }
     var customUrlInput by remember { mutableStateOf("") }
-    var selectedEmail by remember { mutableStateOf("kung66130@gmail.com") }
+    var selectedEmail by remember { mutableStateOf("developer@example.com") }
 
     val accounts = listOf(
         GoogleAccountItem(
-            name = "Wutthiphong Aiamlaoo",
-            email = "kung66130@gmail.com",
-            initial = "W",
-            avatarBg = Color(0xFFE53935)
-        ),
-        GoogleAccountItem(
-            name = "wutthiphong.ai",
-            email = "wutthiphong.ai@gmail.com",
-            initial = "W",
+            name = "Developer Account",
+            email = "developer@example.com",
+            initial = "D",
             avatarBg = Color(0xFF1E88E5)
-        ),
-        GoogleAccountItem(
-            name = "kung Ai",
-            email = "kungjadev@gmail.com",
-            initial = "K",
-            avatarBg = Color(0xFF43A047)
         )
     )
 

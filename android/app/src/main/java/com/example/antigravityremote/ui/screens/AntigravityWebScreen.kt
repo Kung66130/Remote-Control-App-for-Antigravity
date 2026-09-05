@@ -205,7 +205,6 @@ fun AntigravityWebScreen(
                         settings.apply {
                             javaScriptEnabled = true
                             domStorageEnabled = true
-                            databaseEnabled = true
                             allowFileAccess = true
                             allowContentAccess = true
                             useWideViewPort = true

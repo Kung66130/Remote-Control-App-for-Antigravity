@@ -61,8 +61,13 @@ __pycache__/
 .venv
 env/
 venv/
-*.html
-*.png
-*.jpg
+# Root level temporary dumps & images
+/*.html
+/*.png
+/*.jpg
 app_icons/
 Antigravity/
+
+# Ensure all Android resources are tracked
+!android/app/src/main/res/**
+
