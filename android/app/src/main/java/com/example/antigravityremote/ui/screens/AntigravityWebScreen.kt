@@ -73,6 +73,7 @@ fun AntigravityWebScreen(
 ) {
     val context = LocalContext.current
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+    val webViewState = androidx.compose.runtime.saveable.rememberSaveable { android.os.Bundle() }
     var pageTitle by remember { mutableStateOf("Antigravity Remote") }
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }
@@ -270,6 +271,8 @@ fun AntigravityWebScreen(
 
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 isLoading = false
+                                view?.saveState(webViewState)
+                                CookieManager.getInstance().flush()
                             }
 
                             override fun shouldOverrideUrlLoading(
@@ -280,12 +283,26 @@ fun AntigravityWebScreen(
                             }
                         }
 
-                        loadUrl(url)
+                        if (!webViewState.isEmpty) {
+                            restoreState(webViewState)
+                        } else {
+                            loadUrl(url)
+                        }
                         webViewInstance = this
                     }
                 },
+                update = { view ->
+                    webViewInstance = view
+                },
                 modifier = Modifier.fillMaxSize()
             )
+
+            androidx.compose.runtime.DisposableEffect(Unit) {
+                onDispose {
+                    webViewInstance?.saveState(webViewState)
+                    CookieManager.getInstance().flush()
+                }
+            }
         }
     }
 }
