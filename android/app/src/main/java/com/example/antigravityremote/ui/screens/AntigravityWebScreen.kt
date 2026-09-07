@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -17,6 +18,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,25 +37,33 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +75,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.antigravityremote.util.TtsManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
@@ -73,10 +87,14 @@ fun AntigravityWebScreen(
 ) {
     val context = LocalContext.current
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
-    val webViewState = androidx.compose.runtime.saveable.rememberSaveable { android.os.Bundle() }
+    val webViewState = rememberSaveable { android.os.Bundle() }
     var pageTitle by remember { mutableStateOf("Antigravity Remote") }
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }
+
+    // Native Android Text-to-Speech Manager
+    val ttsManager = remember(context) { TtsManager(context) }
+    val isSpeaking by ttsManager.isSpeaking.collectAsState()
 
     // File / Image Picker Handler for WebChromeClient
     var uploadMessageCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
@@ -156,6 +174,50 @@ fun AntigravityWebScreen(
                     }
                 },
                 actions = {
+                    // Native TTS Button (Speak / Stop)
+                    IconButton(
+                        onClick = {
+                            if (isSpeaking) {
+                                ttsManager.stop()
+                            } else {
+                                val js = """
+                                    (function() {
+                                        var sel = window.getSelection().toString().trim();
+                                        if (sel.length > 0) return sel;
+
+                                        var candidates = document.querySelectorAll(
+                                            '[data-message-author="assistant"], .assistant-message, .markdown-content, [role="article"], .prose, .chat-bubble'
+                                        );
+                                        if (candidates.length > 0) {
+                                            return candidates[candidates.length - 1].innerText.trim();
+                                        }
+
+                                        var ps = document.querySelectorAll('p');
+                                        if (ps.length > 0) {
+                                            return ps[ps.length - 1].innerText.trim();
+                                        }
+                                        return "";
+                                    })()
+                                """.trimIndent()
+
+                                webViewInstance?.evaluateJavascript(js) { result ->
+                                    val unquoted = result?.removeSurrounding("\"")
+                                        ?.replace("\\n", "\n")
+                                        ?.replace("\\\"", "\"") ?: ""
+                                    if (unquoted.isNotBlank() && unquoted != "null") {
+                                        ttsManager.speak(unquoted)
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (isSpeaking) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                            contentDescription = if (isSpeaking) "Stop Speaking" else "Read Aloud",
+                            tint = if (isSpeaking) Color(0xFFE53935) else MaterialTheme.colorScheme.primary
+                        )
+                    }
+
                     IconButton(onClick = { webViewInstance?.reload() }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -163,6 +225,7 @@ fun AntigravityWebScreen(
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
+
                     IconButton(
                         onClick = {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -182,125 +245,213 @@ fun AntigravityWebScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            AnimatedVisibility(visible = isLoading) {
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(2.dp),
-                    color = MaterialTheme.colorScheme.primary
+            Column(modifier = Modifier.fillMaxSize()) {
+                AnimatedVisibility(visible = isLoading) {
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth().height(2.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                AndroidView(
+                    factory = { ctx ->
+                        WebView(ctx).apply {
+                            layoutParams = ViewGroup.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT
+                            )
+
+                            settings.apply {
+                                javaScriptEnabled = true
+                                domStorageEnabled = true
+                                allowFileAccess = true
+                                allowContentAccess = true
+                                useWideViewPort = true
+                                loadWithOverviewMode = true
+                                builtInZoomControls = true
+                                displayZoomControls = false
+                                mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                cacheMode = WebSettings.LOAD_DEFAULT
+                                userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 AntigravityRemote/1.0"
+                            }
+
+                            CookieManager.getInstance().setAcceptCookie(true)
+                            CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+
+                            // Javascript Interface for Native TTS integration
+                            class AndroidTtsBridge {
+                                @JavascriptInterface
+                                fun speak(text: String) {
+                                    (ctx as? Activity)?.runOnUiThread {
+                                        ttsManager.speak(text)
+                                    }
+                                }
+
+                                @JavascriptInterface
+                                fun stop() {
+                                    (ctx as? Activity)?.runOnUiThread {
+                                        ttsManager.stop()
+                                    }
+                                }
+                            }
+                            addJavascriptInterface(AndroidTtsBridge(), "AndroidTTS")
+
+                            webChromeClient = object : WebChromeClient() {
+                                override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                    progress = newProgress / 100f
+                                    isLoading = newProgress < 100
+                                }
+
+                                override fun onReceivedTitle(view: WebView?, title: String?) {
+                                    if (!title.isNullOrBlank() && !title.startsWith("http")) {
+                                        pageTitle = title
+                                    }
+                                }
+
+                                override fun onShowFileChooser(
+                                    webView: WebView?,
+                                    filePathCallback: ValueCallback<Array<Uri>>?,
+                                    fileChooserParams: FileChooserParams?
+                                ): Boolean {
+                                    uploadMessageCallback?.onReceiveValue(null)
+                                    uploadMessageCallback = filePathCallback
+
+                                    val intent = try {
+                                        fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                                            type = "image/*"
+                                            addCategory(Intent.CATEGORY_OPENABLE)
+                                        }
+                                    } catch (e: Exception) {
+                                        Intent(Intent.ACTION_GET_CONTENT).apply {
+                                            type = "image/*"
+                                            addCategory(Intent.CATEGORY_OPENABLE)
+                                            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                        }
+                                    }
+
+                                    return try {
+                                        fileChooserLauncher.launch(intent)
+                                        true
+                                    } catch (e: Exception) {
+                                        uploadMessageCallback?.onReceiveValue(null)
+                                        uploadMessageCallback = null
+                                        false
+                                    }
+                                }
+                            }
+
+                            webViewClient = object : WebViewClient() {
+                                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                                    isLoading = true
+                                }
+
+                                override fun onPageFinished(view: WebView?, url: String?) {
+                                    isLoading = false
+                                    view?.saveState(webViewState)
+                                    CookieManager.getInstance().flush()
+                                }
+
+                                override fun shouldOverrideUrlLoading(
+                                    view: WebView?,
+                                    request: WebResourceRequest?
+                                ): Boolean {
+                                    return false
+                                }
+                            }
+
+                            if (!webViewState.isEmpty) {
+                                restoreState(webViewState)
+                            } else {
+                                loadUrl(url)
+                            }
+                            webViewInstance = this
+                        }
+                    },
+                    update = { view ->
+                        webViewInstance = view
+                    },
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
-            AndroidView(
-                factory = { ctx ->
-                    WebView(ctx).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-
-                        settings.apply {
-                            javaScriptEnabled = true
-                            domStorageEnabled = true
-                            allowFileAccess = true
-                            allowContentAccess = true
-                            useWideViewPort = true
-                            loadWithOverviewMode = true
-                            builtInZoomControls = true
-                            displayZoomControls = false
-                            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                            cacheMode = WebSettings.LOAD_DEFAULT
-                            userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 AntigravityRemote/1.0"
+            // Floating Speech Player Banner when TTS is active
+            AnimatedVisibility(
+                visible = isSpeaking,
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut() + slideOutVertically { it },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shadowElevation = 8.dp,
+                    tonalElevation = 6.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.VolumeUp,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
 
-                        CookieManager.getInstance().setAcceptCookie(true)
-                        CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+                        Spacer(modifier = Modifier.width(12.dp))
 
-                        webChromeClient = object : WebChromeClient() {
-                            override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                                progress = newProgress / 100f
-                                isLoading = newProgress < 100
-                            }
-
-                            override fun onReceivedTitle(view: WebView?, title: String?) {
-                                if (!title.isNullOrBlank() && !title.startsWith("http")) {
-                                    pageTitle = title
-                                }
-                            }
-
-                            override fun onShowFileChooser(
-                                webView: WebView?,
-                                filePathCallback: ValueCallback<Array<Uri>>?,
-                                fileChooserParams: FileChooserParams?
-                            ): Boolean {
-                                uploadMessageCallback?.onReceiveValue(null)
-                                uploadMessageCallback = filePathCallback
-
-                                val intent = try {
-                                    fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
-                                        type = "image/*"
-                                        addCategory(Intent.CATEGORY_OPENABLE)
-                                    }
-                                } catch (e: Exception) {
-                                    Intent(Intent.ACTION_GET_CONTENT).apply {
-                                        type = "image/*"
-                                        addCategory(Intent.CATEGORY_OPENABLE)
-                                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                                    }
-                                }
-
-                                return try {
-                                    fileChooserLauncher.launch(intent)
-                                    true
-                                } catch (e: Exception) {
-                                    uploadMessageCallback?.onReceiveValue(null)
-                                    uploadMessageCallback = null
-                                    false
-                                }
-                            }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "กำลังอ่านออกเสียงให้ฟัง...",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "ระบบอ่านออกเสียงผ่านลำโพงมือถือ (TH / EN)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
                         }
 
-                        webViewClient = object : WebViewClient() {
-                            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                                isLoading = true
-                            }
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                            override fun onPageFinished(view: WebView?, url: String?) {
-                                isLoading = false
-                                view?.saveState(webViewState)
-                                CookieManager.getInstance().flush()
-                            }
-
-                            override fun shouldOverrideUrlLoading(
-                                view: WebView?,
-                                request: WebResourceRequest?
-                            ): Boolean {
-                                return false
-                            }
+                        FilledTonalButton(
+                            onClick = { ttsManager.stop() },
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = Color(0xFFE53935).copy(alpha = 0.15f),
+                                contentColor = Color(0xFFE53935)
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("หยุด", fontWeight = FontWeight.Bold)
                         }
-
-                        if (!webViewState.isEmpty) {
-                            restoreState(webViewState)
-                        } else {
-                            loadUrl(url)
-                        }
-                        webViewInstance = this
                     }
-                },
-                update = { view ->
-                    webViewInstance = view
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+                }
+            }
 
-            androidx.compose.runtime.DisposableEffect(Unit) {
+            DisposableEffect(Unit) {
                 onDispose {
                     webViewInstance?.saveState(webViewState)
                     CookieManager.getInstance().flush()
+                    ttsManager.shutdown()
                 }
             }
         }
