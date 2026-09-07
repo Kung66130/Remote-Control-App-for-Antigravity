@@ -153,40 +153,42 @@ fun AntigravityWebScreen(
                     var turn = turns[i];
                     var ps = turn.querySelectorAll('p');
                     var collected = [];
+                    var totalLen = 0;
                     for (var j = 0; j < ps.length; j++) {
                         var pt = getCleanText(ps[j]);
                         if (pt.length > 0 && !isNoise(pt)) {
                             collected.push(pt);
+                            totalLen += pt.length;
+                            // Option 1: Read only the main summary / first paragraph(s)
+                            if (totalLen >= 80 || collected.length >= 2) {
+                                break;
+                            }
                         }
                     }
                     if (collected.length > 0) {
-                        return collected.join("\n\n");
+                        return collected.join(" ");
                     }
 
                     var selectTexts = turn.querySelectorAll('[class*="select-text"]');
                     for (var k = selectTexts.length - 1; k >= 0; k--) {
                         var st = getCleanText(selectTexts[k]);
                         if (st.length > 10 && !isNoise(st)) {
-                            return st;
+                            var firstPart = st.split(/\n\n|\r\n\r\n/)[0].trim();
+                            return firstPart.length > 0 ? firstPart : st.substring(0, 200);
                         }
                     }
                 }
 
-                // 3. Fallback: all paragraphs across this frame
+                // 3. Fallback: first non-noise paragraph
                 var allPs = document.querySelectorAll('p');
-                var pCollected = [];
                 for (var m = allPs.length - 1; m >= 0; m--) {
                     var p = allPs[m];
                     if (!p.closest('header, nav, button, input, textarea, form')) {
                         var text = getCleanText(p);
                         if (text.length > 15 && !isNoise(text)) {
-                            pCollected.unshift(text);
-                            if (pCollected.length >= 3) break;
+                            return text;
                         }
                     }
-                }
-                if (pCollected.length > 0) {
-                    return pCollected.join("\n\n");
                 }
 
                 return "";
