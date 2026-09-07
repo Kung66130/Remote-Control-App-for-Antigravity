@@ -74,17 +74,21 @@ class TtsManager(context: Context) : TextToSpeech.OnInitListener {
         // Auto-detect language: Thai vs English
         val containsThai = cleanText.any { it in '\u0E00'..'\u0E7F' }
         val targetLocale = if (containsThai) {
-            val availability = tts?.isLanguageAvailable(thaiLocale)
-            if (availability == TextToSpeech.LANG_AVAILABLE || availability == TextToSpeech.LANG_COUNTRY_AVAILABLE) {
+            val availability = tts?.isLanguageAvailable(thaiLocale) ?: TextToSpeech.LANG_NOT_SUPPORTED
+            Log.d(TAG, "Thai locale availability: $availability")
+            if (availability >= TextToSpeech.LANG_AVAILABLE) {
                 thaiLocale
             } else {
-                englishLocale
+                Log.w(TAG, "Thai not available on device, attempting default locale or English")
+                Locale.getDefault()
             }
         } else {
             englishLocale
         }
 
-        tts?.language = targetLocale
+        val langResult = tts?.setLanguage(targetLocale)
+        Log.d(TAG, "setLanguage result: $langResult for $targetLocale")
+
         tts?.setPitch(1.0f)
         tts?.setSpeechRate(1.0f)
 
@@ -93,7 +97,8 @@ class TtsManager(context: Context) : TextToSpeech.OnInitListener {
 
         val utteranceId = UUID.randomUUID().toString()
         val params = Bundle()
-        tts?.speak(cleanText, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+        val speakResult = tts?.speak(cleanText, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+        Log.d(TAG, "tts.speak returned: $speakResult (text length: ${cleanText.length}, preview: ${cleanText.take(50)})")
     }
 
     fun stop() {

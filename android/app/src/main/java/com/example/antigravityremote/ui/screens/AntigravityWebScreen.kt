@@ -182,32 +182,71 @@ fun AntigravityWebScreen(
                             } else {
                                 val js = """
                                     (function() {
+                                        var textToSpeak = "";
+
+                                        // 1. Check if user highlighted any text
                                         var sel = window.getSelection().toString().trim();
-                                        if (sel.length > 0) return sel;
+                                        if (sel.length > 0) {
+                                            textToSpeak = sel;
+                                        } else {
+                                            // 2. Query chat message bubbles & markdown elements
+                                            var selectors = [
+                                                '[data-message-author-role="assistant"]',
+                                                '[data-message-author="assistant"]',
+                                                '[data-role="model"]',
+                                                '[data-role="assistant"]',
+                                                '.model-response',
+                                                '.assistant-message',
+                                                '.prose',
+                                                '.markdown-content',
+                                                '[role="article"]',
+                                                '.chat-bubble',
+                                                '[class*="message"]',
+                                                '[class*="bubble"]',
+                                                '[class*="content"]',
+                                                '[class*="markdown"]'
+                                            ];
 
-                                        var candidates = document.querySelectorAll(
-                                            '[data-message-author="assistant"], .assistant-message, .markdown-content, [role="article"], .prose, .chat-bubble'
-                                        );
-                                        if (candidates.length > 0) {
-                                            return candidates[candidates.length - 1].innerText.trim();
+                                            for (var i = 0; i < selectors.length; i++) {
+                                                var items = document.querySelectorAll(selectors[i]);
+                                                for (var j = items.length - 1; j >= 0; j--) {
+                                                    var item = items[j];
+                                                    if (!item.closest('header, nav, button, input, textarea, form, [contenteditable="true"]')) {
+                                                        var t = item.innerText ? item.innerText.trim() : "";
+                                                        if (t.length > 5) {
+                                                            textToSpeak = t;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                                if (textToSpeak.length > 0) break;
+                                            }
+
+                                            // 3. Fallback: all paragraphs or text containers
+                                            if (textToSpeak.length === 0) {
+                                                var ps = document.querySelectorAll('p, div');
+                                                for (var k = ps.length - 1; k >= 0; k--) {
+                                                    var p = ps[k];
+                                                    if (!p.closest('header, nav, button, input, textarea, form')) {
+                                                        var pt = p.innerText ? p.innerText.trim() : "";
+                                                        if (pt.length > 15) {
+                                                            textToSpeak = pt;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
 
-                                        var ps = document.querySelectorAll('p');
-                                        if (ps.length > 0) {
-                                            return ps[ps.length - 1].innerText.trim();
+                                        if (textToSpeak.length > 0 && window.AndroidTTS) {
+                                            window.AndroidTTS.speak(textToSpeak);
+                                        } else if (window.AndroidTTS) {
+                                            window.AndroidTTS.speak("ยังไม่พบข้อความในหน้านี้ครับ");
                                         }
-                                        return "";
                                     })()
                                 """.trimIndent()
 
-                                webViewInstance?.evaluateJavascript(js) { result ->
-                                    val unquoted = result?.removeSurrounding("\"")
-                                        ?.replace("\\n", "\n")
-                                        ?.replace("\\\"", "\"") ?: ""
-                                    if (unquoted.isNotBlank() && unquoted != "null") {
-                                        ttsManager.speak(unquoted)
-                                    }
-                                }
+                                webViewInstance?.evaluateJavascript(js, null)
                             }
                         }
                     ) {
@@ -281,6 +320,8 @@ fun AntigravityWebScreen(
                                 userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 AntigravityRemote/1.0"
                             }
 
+                            WebView.setWebContentsDebuggingEnabled(true)
+
                             CookieManager.getInstance().setAcceptCookie(true)
                             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
@@ -288,6 +329,7 @@ fun AntigravityWebScreen(
                             class AndroidTtsBridge {
                                 @JavascriptInterface
                                 fun speak(text: String) {
+                                    android.util.Log.d("TtsManager", "AndroidTtsBridge.speak called (length: ${text.length}): ${text.take(80)}")
                                     (ctx as? Activity)?.runOnUiThread {
                                         ttsManager.speak(text)
                                     }
@@ -295,6 +337,7 @@ fun AntigravityWebScreen(
 
                                 @JavascriptInterface
                                 fun stop() {
+                                    android.util.Log.d("TtsManager", "AndroidTtsBridge.stop called")
                                     (ctx as? Activity)?.runOnUiThread {
                                         ttsManager.stop()
                                     }
