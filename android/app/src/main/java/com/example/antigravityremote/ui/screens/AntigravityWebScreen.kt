@@ -182,67 +182,92 @@ fun AntigravityWebScreen(
                             } else {
                                 val js = """
                                     (function() {
-                                        var textToSpeak = "";
-
                                         // 1. Check if user highlighted any text
                                         var sel = window.getSelection().toString().trim();
                                         if (sel.length > 0) {
-                                            textToSpeak = sel;
-                                        } else {
-                                            // 2. Query chat message bubbles & markdown elements
-                                            var selectors = [
-                                                '[data-message-author-role="assistant"]',
-                                                '[data-message-author="assistant"]',
-                                                '[data-role="model"]',
-                                                '[data-role="assistant"]',
-                                                '.model-response',
-                                                '.assistant-message',
-                                                '.prose',
-                                                '.markdown-content',
-                                                '[role="article"]',
-                                                '.chat-bubble',
-                                                '[class*="message"]',
-                                                '[class*="bubble"]',
-                                                '[class*="content"]',
-                                                '[class*="markdown"]'
-                                            ];
+                                            if (window.AndroidTTS) window.AndroidTTS.speak(sel);
+                                            return sel;
+                                        }
 
-                                            for (var i = 0; i < selectors.length; i++) {
-                                                var items = document.querySelectorAll(selectors[i]);
-                                                for (var j = items.length - 1; j >= 0; j--) {
-                                                    var item = items[j];
-                                                    if (!item.closest('header, nav, button, input, textarea, form, [contenteditable="true"]')) {
-                                                        var t = item.innerText ? item.innerText.trim() : "";
-                                                        if (t.length > 5) {
-                                                            textToSpeak = t;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                                if (textToSpeak.length > 0) break;
+                                        // Helper: filter out headers, sidebars, inputs, dialogs
+                                        function isIgnored(el) {
+                                            if (!el) return true;
+                                            if (el.closest('header, nav, aside, footer, [role="banner"], [role="navigation"], [role="toolbar"], form, input, textarea, button, [contenteditable="true"]')) {
+                                                return true;
                                             }
+                                            var cls = ((el.className || "") + " " + (el.id || "")).toLowerCase();
+                                            if (/header|topbar|appbar|sidebar|drawer|navigation|toolbar|branding|logo/i.test(cls)) {
+                                                return true;
+                                            }
+                                            return false;
+                                        }
 
-                                            // 3. Fallback: all paragraphs or text containers
-                                            if (textToSpeak.length === 0) {
-                                                var ps = document.querySelectorAll('p, div');
-                                                for (var k = ps.length - 1; k >= 0; k--) {
-                                                    var p = ps[k];
-                                                    if (!p.closest('header, nav, button, input, textarea, form')) {
-                                                        var pt = p.innerText ? p.innerText.trim() : "";
-                                                        if (pt.length > 15) {
-                                                            textToSpeak = pt;
-                                                            break;
-                                                        }
+                                        function isTitleOrNoise(t) {
+                                            if (!t) return true;
+                                            var clean = t.trim().toLowerCase();
+                                            if (clean.length < 3) return true;
+                                            if (clean === "google antigravity" || 
+                                                clean === "antigravity" || 
+                                                clean === "connected (online)" ||
+                                                clean === "add context" ||
+                                                clean === "media" ||
+                                                clean === "mentions" ||
+                                                clean === "actions" ||
+                                                clean === "browser") {
+                                                return true;
+                                            }
+                                            if (clean.indexOf("google antigravity") === 0 && clean.length < 40) return true;
+                                            if (clean.indexOf("antigravity") === 0 && clean.length < 30) return true;
+                                            return false;
+                                        }
+
+                                        // 2. Query chat message bubbles & markdown elements
+                                        var selectors = [
+                                            '[data-message-author-role="assistant"]',
+                                            '[data-message-author="assistant"]',
+                                            '[data-role="model"]',
+                                            '[data-role="assistant"]',
+                                            '.model-response',
+                                            '.assistant-message',
+                                            '.chat-message-assistant',
+                                            '.prose',
+                                            '.markdown',
+                                            '.rendered-markdown',
+                                            '[class*="response-content"]',
+                                            '[class*="message-body"]'
+                                        ];
+
+                                        for (var s = 0; s < selectors.length; s++) {
+                                            var items = document.querySelectorAll(selectors[s]);
+                                            for (var i = items.length - 1; i >= 0; i--) {
+                                                var item = items[i];
+                                                if (!isIgnored(item)) {
+                                                    var t = (item.innerText || item.textContent || "").trim();
+                                                    if (t.length > 10 && !isTitleOrNoise(t)) {
+                                                        if (window.AndroidTTS) window.AndroidTTS.speak(t);
+                                                        return t;
                                                     }
                                                 }
                                             }
                                         }
 
-                                        if (textToSpeak.length > 0 && window.AndroidTTS) {
-                                            window.AndroidTTS.speak(textToSpeak);
-                                        } else if (window.AndroidTTS) {
-                                            window.AndroidTTS.speak("ยังไม่พบข้อความในหน้านี้ครับ");
+                                        // 3. Fallback: paragraphs with real sentence content
+                                        var ps = document.querySelectorAll('p, blockquote, [class*="message"]');
+                                        for (var k = ps.length - 1; k >= 0; k--) {
+                                            var p = ps[k];
+                                            if (!isIgnored(p)) {
+                                                var pt = (p.innerText || p.textContent || "").trim();
+                                                if (pt.length > 15 && !isTitleOrNoise(pt)) {
+                                                    if (window.AndroidTTS) window.AndroidTTS.speak(pt);
+                                                    return pt;
+                                                }
+                                            }
                                         }
+
+                                        if (window.AndroidTTS) {
+                                            window.AndroidTTS.speak("ยังไม่พบข้อความแชทในหน้านี้ครับ ลองใช้นิ้วไฮไลต์ข้อความที่ต้องการฟังได้ครับ");
+                                        }
+                                        return "";
                                     })()
                                 """.trimIndent()
 
