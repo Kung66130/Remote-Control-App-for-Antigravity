@@ -56,6 +56,7 @@ dependencies {
   // Arch Components
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
+  implementation("androidx.webkit:webkit:1.12.1")
 
   // Compose
   implementation(libs.androidx.compose.ui)

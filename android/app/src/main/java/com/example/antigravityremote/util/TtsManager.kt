@@ -95,10 +95,27 @@ class TtsManager(context: Context) : TextToSpeech.OnInitListener {
         _currentText.value = cleanText
         _isSpeaking.value = true
 
+        val maxLen = try {
+            TextToSpeech.getMaxSpeechInputLength().coerceIn(1000, 3900)
+        } catch (e: Exception) {
+            3500
+        }
+
         val utteranceId = UUID.randomUUID().toString()
         val params = Bundle()
-        val speakResult = tts?.speak(cleanText, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
-        Log.d(TAG, "tts.speak returned: $speakResult (text length: ${cleanText.length}, preview: ${cleanText.take(50)})")
+
+        if (cleanText.length <= maxLen) {
+            val speakResult = tts?.speak(cleanText, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
+            Log.d(TAG, "tts.speak single returned: $speakResult (length: ${cleanText.length})")
+        } else {
+            val chunks = cleanText.chunked(maxLen)
+            Log.d(TAG, "tts.speak chunked into ${chunks.size} parts (total length: ${cleanText.length})")
+            chunks.forEachIndexed { index, chunk ->
+                val queueMode = if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
+                val chunkId = "${utteranceId}_$index"
+                tts?.speak(chunk, queueMode, params, chunkId)
+            }
+        }
     }
 
     fun stop() {

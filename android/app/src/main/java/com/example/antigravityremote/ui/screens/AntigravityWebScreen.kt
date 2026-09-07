@@ -35,15 +35,23 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import android.widget.Toast
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.VoiceOverOff
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -95,6 +103,136 @@ fun AntigravityWebScreen(
     // Native Android Text-to-Speech Manager
     val ttsManager = remember(context) { TtsManager(context) }
     val isSpeaking by ttsManager.isSpeaking.collectAsState()
+
+    // Shared Preferences for Auto-Read TTS
+    val sharedPrefs = remember(context) {
+        context.getSharedPreferences("antigravity_prefs", android.content.Context.MODE_PRIVATE)
+    }
+    var isAutoReadEnabled by rememberSaveable {
+        mutableStateOf(sharedPrefs.getBoolean("auto_read_tts", false))
+    }
+
+    val ttsScript = """
+        (function() {
+            if (window.__antigravityTtsBridgeInstalled) return;
+            window.__antigravityTtsBridgeInstalled = true;
+
+            var lastSpokenText = "";
+            var debounceTimer = null;
+
+            function getCleanText(el) {
+                if (!el) return "";
+                return (el.innerText || el.textContent || "").trim();
+            }
+
+            function isNoise(t) {
+                if (!t) return true;
+                var s = t.trim().toLowerCase();
+                if (s.length < 3) return true;
+                if (s === "google antigravity" || s === "antigravity" || s === "connected (online)" ||
+                    s === "add context" || s === "media" || s === "mentions" || s === "actions") {
+                    return true;
+                }
+                if (s.indexOf("google antigravity") === 0 && s.length < 40) return true;
+                if (s.indexOf("antigravity") === 0 && s.length < 30) return true;
+                if (s.indexOf("connected (online)") === 0) return true;
+                if (s.indexOf("ask anything, @ to mention") === 0) return true;
+                return false;
+            }
+
+            function extractLatestAssistantText() {
+                // 1. Text selection / highlight in this frame
+                var sel = window.getSelection ? window.getSelection().toString().trim() : "";
+                if (sel.length > 0 && !isNoise(sel)) {
+                    return sel;
+                }
+
+                // 2. Chat turns in Antigravity web UI (elements with class containing scroll-mt-4)
+                var turns = document.querySelectorAll('[class*="group w-full scroll-mt-4"]');
+                for (var i = turns.length - 1; i >= 0; i--) {
+                    var turn = turns[i];
+                    var ps = turn.querySelectorAll('p');
+                    var collected = [];
+                    for (var j = 0; j < ps.length; j++) {
+                        var pt = getCleanText(ps[j]);
+                        if (pt.length > 0 && !isNoise(pt)) {
+                            collected.push(pt);
+                        }
+                    }
+                    if (collected.length > 0) {
+                        return collected.join("\n\n");
+                    }
+
+                    var selectTexts = turn.querySelectorAll('[class*="select-text"]');
+                    for (var k = selectTexts.length - 1; k >= 0; k--) {
+                        var st = getCleanText(selectTexts[k]);
+                        if (st.length > 10 && !isNoise(st)) {
+                            return st;
+                        }
+                    }
+                }
+
+                // 3. Fallback: all paragraphs across this frame
+                var allPs = document.querySelectorAll('p');
+                var pCollected = [];
+                for (var m = allPs.length - 1; m >= 0; m--) {
+                    var p = allPs[m];
+                    if (!p.closest('header, nav, button, input, textarea, form')) {
+                        var text = getCleanText(p);
+                        if (text.length > 15 && !isNoise(text)) {
+                            pCollected.unshift(text);
+                            if (pCollected.length >= 3) break;
+                        }
+                    }
+                }
+                if (pCollected.length > 0) {
+                    return pCollected.join("\n\n");
+                }
+
+                return "";
+            }
+
+            function speakManual() {
+                var text = extractLatestAssistantText();
+                if (text && text.length > 0) {
+                    if (window.AndroidTTS) {
+                        window.AndroidTTS.speak(text);
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            function checkAutoRead() {
+                if (!window.AndroidTTS || !window.AndroidTTS.isAutoReadEnabled()) return;
+                var text = extractLatestAssistantText();
+                if (text && text.length > 10 && text !== lastSpokenText) {
+                    lastSpokenText = text;
+                    window.AndroidTTS.speak(text);
+                }
+            }
+
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'ANTIGRAVITY_TTS_SPEAK') {
+                    speakManual();
+                }
+            });
+
+            setTimeout(function() {
+                lastSpokenText = extractLatestAssistantText();
+                var observer = new MutationObserver(function() {
+                    if (!window.AndroidTTS || !window.AndroidTTS.isAutoReadEnabled()) return;
+                    if (debounceTimer) clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(checkAutoRead, 2200);
+                });
+                if (document.body) {
+                    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+                }
+            }, 1500);
+
+            window.__antigravitySpeakLatest = speakManual;
+        })();
+    """.trimIndent()
 
     // File / Image Picker Handler for WebChromeClient
     var uploadMessageCallback by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
@@ -174,109 +312,62 @@ fun AntigravityWebScreen(
                     }
                 },
                 actions = {
-                    // Native TTS Button (Speak / Stop)
+                    // Auto-Read Toggle Button
+                    IconButton(
+                        onClick = {
+                            isAutoReadEnabled = !isAutoReadEnabled
+                            sharedPrefs.edit().putBoolean("auto_read_tts", isAutoReadEnabled).apply()
+                            Toast.makeText(
+                                context,
+                                if (isAutoReadEnabled) "เปิดการอ่านออกเสียงอัตโนมัติ (Auto-Read) แล้ว" else "ปิดการอ่านอัตโนมัติแล้ว",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isAutoReadEnabled) Icons.Default.RecordVoiceOver else Icons.Default.VoiceOverOff,
+                                contentDescription = "Auto-Read Toggle",
+                                tint = if (isAutoReadEnabled) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = if (isAutoReadEnabled) "AUTO" else "MANUAL",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isAutoReadEnabled) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+
+                    // Native TTS Button (Manual Speak / Stop)
                     IconButton(
                         onClick = {
                             if (isSpeaking) {
                                 ttsManager.stop()
                             } else {
-                                val js = """
+                                val triggerJs = """
                                     (function() {
-                                        // 1. Check if user highlighted any text
-                                        var sel = window.getSelection().toString().trim();
-                                        if (sel.length > 0) {
-                                            if (window.AndroidTTS) window.AndroidTTS.speak(sel);
-                                            return sel;
+                                        if (typeof window.__antigravitySpeakLatest === 'function') {
+                                            window.__antigravitySpeakLatest();
                                         }
-
-                                        // Helper: filter out headers, sidebars, inputs, dialogs
-                                        function isIgnored(el) {
-                                            if (!el) return true;
-                                            if (el.closest('header, nav, aside, footer, [role="banner"], [role="navigation"], [role="toolbar"], form, input, textarea, button, [contenteditable="true"]')) {
-                                                return true;
-                                            }
-                                            var cls = ((el.className || "") + " " + (el.id || "")).toLowerCase();
-                                            if (/header|topbar|appbar|sidebar|drawer|navigation|toolbar|branding|logo/i.test(cls)) {
-                                                return true;
-                                            }
-                                            return false;
+                                        var iframes = document.querySelectorAll('iframe');
+                                        for (var i = 0; i < iframes.length; i++) {
+                                            try {
+                                                iframes[i].contentWindow.postMessage({ type: 'ANTIGRAVITY_TTS_SPEAK' }, '*');
+                                            } catch(e) {}
                                         }
-
-                                        function isTitleOrNoise(t) {
-                                            if (!t) return true;
-                                            var clean = t.trim().toLowerCase();
-                                            if (clean.length < 3) return true;
-                                            if (clean === "google antigravity" || 
-                                                clean === "antigravity" || 
-                                                clean === "connected (online)" ||
-                                                clean === "add context" ||
-                                                clean === "media" ||
-                                                clean === "mentions" ||
-                                                clean === "actions" ||
-                                                clean === "browser") {
-                                                return true;
-                                            }
-                                            if (clean.indexOf("google antigravity") === 0 && clean.length < 40) return true;
-                                            if (clean.indexOf("antigravity") === 0 && clean.length < 30) return true;
-                                            return false;
-                                        }
-
-                                        // 2. Query chat message bubbles & markdown elements
-                                        var selectors = [
-                                            '[data-message-author-role="assistant"]',
-                                            '[data-message-author="assistant"]',
-                                            '[data-role="model"]',
-                                            '[data-role="assistant"]',
-                                            '.model-response',
-                                            '.assistant-message',
-                                            '.chat-message-assistant',
-                                            '.prose',
-                                            '.markdown',
-                                            '.rendered-markdown',
-                                            '[class*="response-content"]',
-                                            '[class*="message-body"]'
-                                        ];
-
-                                        for (var s = 0; s < selectors.length; s++) {
-                                            var items = document.querySelectorAll(selectors[s]);
-                                            for (var i = items.length - 1; i >= 0; i--) {
-                                                var item = items[i];
-                                                if (!isIgnored(item)) {
-                                                    var t = (item.innerText || item.textContent || "").trim();
-                                                    if (t.length > 10 && !isTitleOrNoise(t)) {
-                                                        if (window.AndroidTTS) window.AndroidTTS.speak(t);
-                                                        return t;
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        // 3. Fallback: paragraphs with real sentence content
-                                        var ps = document.querySelectorAll('p, blockquote, [class*="message"]');
-                                        for (var k = ps.length - 1; k >= 0; k--) {
-                                            var p = ps[k];
-                                            if (!isIgnored(p)) {
-                                                var pt = (p.innerText || p.textContent || "").trim();
-                                                if (pt.length > 15 && !isTitleOrNoise(pt)) {
-                                                    if (window.AndroidTTS) window.AndroidTTS.speak(pt);
-                                                    return pt;
-                                                }
-                                            }
-                                        }
-
-                                        if (window.AndroidTTS) {
-                                            window.AndroidTTS.speak("ยังไม่พบข้อความแชทในหน้านี้ครับ ลองใช้นิ้วไฮไลต์ข้อความที่ต้องการฟังได้ครับ");
-                                        }
-                                        return "";
                                     })()
                                 """.trimIndent()
-
-                                webViewInstance?.evaluateJavascript(js, null)
+                                webViewInstance?.evaluateJavascript(triggerJs, null)
                             }
                         }
                     ) {
                         Icon(
-                            imageVector = if (isSpeaking) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                            imageVector = if (isSpeaking) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                             contentDescription = if (isSpeaking) "Stop Speaking" else "Read Aloud",
                             tint = if (isSpeaking) Color(0xFFE53935) else MaterialTheme.colorScheme.primary
                         )
@@ -351,7 +442,7 @@ fun AntigravityWebScreen(
                             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
                             // Javascript Interface for Native TTS integration
-                            class AndroidTtsBridge {
+                            class AndroidTtsBridge(private val isAutoRead: () -> Boolean) {
                                 @JavascriptInterface
                                 fun speak(text: String) {
                                     android.util.Log.d("TtsManager", "AndroidTtsBridge.speak called (length: ${text.length}): ${text.take(80)}")
@@ -367,8 +458,26 @@ fun AntigravityWebScreen(
                                         ttsManager.stop()
                                     }
                                 }
+
+                                @JavascriptInterface
+                                fun isAutoReadEnabled(): Boolean {
+                                    return isAutoRead()
+                                }
                             }
-                            addJavascriptInterface(AndroidTtsBridge(), "AndroidTTS")
+                            addJavascriptInterface(AndroidTtsBridge { isAutoReadEnabled }, "AndroidTTS")
+
+                            // Inject cross-origin script into ALL frames (including chat iframe)
+                            if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                                try {
+                                    WebViewCompat.addDocumentStartJavaScript(
+                                        this,
+                                        ttsScript,
+                                        setOf("*")
+                                    )
+                                } catch (e: Exception) {
+                                    android.util.Log.e("AntigravityWebScreen", "Failed to add DocumentStartJavaScript", e)
+                                }
+                            }
 
                             webChromeClient = object : WebChromeClient() {
                                 override fun onProgressChanged(view: WebView?, newProgress: Int) {
@@ -423,6 +532,7 @@ fun AntigravityWebScreen(
                                     isLoading = false
                                     view?.saveState(webViewState)
                                     CookieManager.getInstance().flush()
+                                    view?.evaluateJavascript(ttsScript, null)
                                 }
 
                                 override fun shouldOverrideUrlLoading(
