@@ -1,9 +1,12 @@
 package com.example.antigravityremote.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -61,6 +65,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import com.example.antigravityremote.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -113,27 +119,13 @@ fun GoogleAuthScreen(
         Spacer(modifier = Modifier.height(14.dp))
 
         // App Logo & Header
-        Box(
+        Image(
+            painter = painterResource(R.drawable.ic_launcher_foreground),
+            contentDescription = "Antigravity Remote",
             modifier = Modifier
                 .size(68.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF4285F4),
-                            Color(0xFF34A853)
-                        )
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.CastConnected,
-                contentDescription = "Logo",
-                tint = Color.White,
-                modifier = Modifier.size(36.dp)
-            )
-        }
+                .clip(RoundedCornerShape(16.dp))
+        )
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -145,12 +137,84 @@ fun GoogleAuthScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "สั่งงาน AI Coding Assistant บนคอมพิวเตอร์ของคุณจากทุกที่ 24/7",
+                text = "เชื่อมต่อและติดตามงาน Antigravity บนคอมพิวเตอร์จากมือถือ",
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = MaterialTheme.colorScheme.outline,
                     textAlign = TextAlign.Center
                 )
             )
+        }
+
+        // QUICK RECONNECT CARD (If already paired with a computer)
+        if (antigravityUrl.isNotBlank()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CastConnected,
+                                contentDescription = "Paired PC",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "คอมพิวเตอร์ที่จับคู่ไว้ล่าสุด",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = antigravityUrl,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Button(
+                        onClick = { viewModel.openAntigravityUrl(antigravityUrl) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Reconnect",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("⚡ เชื่อมต่อเครื่องเดิมทันที (ไม่ต้องสแกนใหม่)", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
         }
 
         // HERO CARD: 📷 Smart Scan QR Code to Connect
@@ -239,7 +303,7 @@ fun GoogleAuthScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .heightIn(min = 48.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4285F4),
@@ -253,7 +317,7 @@ fun GoogleAuthScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "📋 วางลิงก์ที่ Copy มาจากคอม (Paste & Connect)",
+                        text = "วางลิงก์และเชื่อมต่อ",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp
                     )
@@ -261,6 +325,22 @@ fun GoogleAuthScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Privacy Policy Link for Google Play Store compliance
+        TextButton(
+            onClick = {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://kung66130.github.io/Remote-Control-App-for-Antigravity/"))
+                context.startActivity(intent)
+            }
+        ) {
+            Text(
+                text = "นโยบายความเป็นส่วนตัว (Privacy Policy)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
