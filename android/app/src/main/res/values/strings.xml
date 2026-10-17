@@ -1,3 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Antigravity Remote</string>
+    <string name="app_subtitle">Control and monitor your workspaces on the go</string>
+
+    <!-- Navigation & Common -->
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="close">Close</string>
+    <string name="refresh">Refresh</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="retry">Retry</string>
+    <string name="language">Language</string>
+    <string name="system_default">System Default</string>
+    <string name="english">English</string>
+    <string name="thai">ไทย (Thai)</string>
+
+    <!-- Google Auth Screen -->
+    <string name="paired_computer_title">Paired Computer</string>
+    <string name="ready_to_connect">Ready to connect directly</string>
+    <string name="btn_connect_now">Connect Now</string>
+    <string name="connect_your_computer">Connect your Computer</string>
+    <string name="open_antigravity_instruction">Follow 3 quick steps below to connect</string>
+    <string name="btn_scan_qr_screen">Scan QR Code on Screen</string>
+    <string name="btn_paste_link">Paste Link &amp; Connect</string>
+    <string name="btn_how_to_connect">How to connect?</string>
+    <string name="guide_title">How to Connect to PC</string>
+    <string name="guide_step_1_title">1. Open Antigravity 2.0 on PC</string>
+    <string name="guide_step_1_desc">Launch Antigravity 2.0 on your computer.</string>
+    <string name="guide_step_2_title">2. Settings ⚙️ ➔ Application ➔ Remote Control</string>
+    <string name="guide_step_2_desc">Go to Settings (⚙️) ➔ Application tab ➔ Switch on \'Enable Remote Control\' to show the QR Code.</string>
+    <string name="guide_step_3_title">3. Scan QR or Paste Link</string>
+    <string name="guide_step_3_desc">Tap \'Scan QR Code on Screen\' to scan the code, or click \'copy link\' on your PC and tap \'Paste Link &amp; Connect\' below.</string>
+    <string name="guide_understand">Got it</string>
+    <string name="toast_latest_link">Connected via latest Antigravity link</string>
+    <string name="paste_dialog_title">Paste Antigravity Link</string>
+    <string name="paste_dialog_desc">Paste the link copied from your computer (\'copy link\' button in Remote Control settings):</string>
+    <string name="paste_dialog_hint">https://...</string>
+    <string name="btn_paste_from_clipboard">Paste from Clipboard</string>
+    <string name="toast_no_link_found">Please enter or paste a valid link</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="btn_about_contact">Contact Us</string>
+    <string name="about_dialog_title">About &amp; Contact Us</string>
+    <string name="about_app_desc">Antigravity Remote connects and monitors your workspace agents on the go.</string>
+    <string name="contact_email_title">Support &amp; Feedback</string>
+    <string name="contact_email_desc">Have questions, feedback, or need help? Feel free to email the developer directly:</string>
+    <string name="btn_send_email">Send Email</string>
+    <string name="btn_copy_email">Copy Email</string>
+    <string name="toast_email_copied">Email copied to clipboard</string>
+
+    <!-- Device Discovery Screen -->
+    <string name="my_computers">My Computers &amp; Agents</string>
+    <string name="scanning">Scanning...</string>
+    <string name="rescan">Rescan</string>
+    <string name="no_devices_found">No active Antigravity computers detected</string>
+    <string name="device_offline">Offline</string>
+    <string name="device_online">Online</string>
+    <string name="btn_connect">Connect</string>
+    <string name="manual_ip_port">Manual IP / Direct Connection</string>
+
+    <!-- Web Remote Screen -->
+    <string name="offline_banner_title">Offline Mode (Cached Content)</string>
+    <string name="offline_banner_desc">Computer is offline or disconnected. You can still browse cached sessions.</string>
+    <string name="dialog_unpair_title">Unpair this Computer?</string>
+    <string name="dialog_unpair_desc">Unpairing requires you to scan the QR code or sign in again to reconnect with this computer.</string>
+    <string name="dialog_unpair_confirm">Unpair &amp; Scan New</string>
+    <string name="tts_reading">Reading aloud via speaker...</string>
+    <string name="tts_subtitle">Speech Synthesizer (TH / EN)</string>
+    <string name="tts_stop">Stop</string>
+    <string name="tts_auto_read_on">Auto-read responses enabled</string>
+    <string name="tts_auto_read_off">Auto-read responses disabled</string>
+    <string name="open_in_browser">Open in Browser</string>
 </resources>

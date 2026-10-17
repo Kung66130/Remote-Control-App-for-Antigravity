@@ -10,7 +10,9 @@ import android.webkit.CookieManager
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -41,17 +43,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.VoiceOverOff
-import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -62,6 +63,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -83,6 +85,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.res.stringResource
+import com.example.antigravityremote.R
+import com.example.antigravityremote.util.LocaleHelper
 import com.example.antigravityremote.util.TtsManager
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,14 +96,18 @@ import com.example.antigravityremote.util.TtsManager
 fun AntigravityWebScreen(
     url: String,
     onBack: () -> Unit,
+    onUnpair: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
     val webViewState = rememberSaveable { android.os.Bundle() }
-    var pageTitle by remember { mutableStateOf("Antigravity Remote") }
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }
+    var isOffline by remember { mutableStateOf(false) }
+    var hasLoadedSuccessfully by rememberSaveable { mutableStateOf(false) }
+    var showUnpairDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
 
     // Native Android Text-to-Speech Manager
     val ttsManager = remember(context) { TtsManager(context) }
@@ -262,6 +271,8 @@ fun AntigravityWebScreen(
         uploadMessageCallback = null
     }
 
+
+
     // Intercept back button to navigate inside webview
     BackHandler {
         if (webViewInstance?.canGoBack() == true) {
@@ -290,7 +301,7 @@ fun AntigravityWebScreen(
                 title = {
                     Column {
                         Text(
-                            text = pageTitle,
+                            text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -308,71 +319,20 @@ fun AntigravityWebScreen(
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     fontSize = 11.sp,
                                     color = if (isLoading) Color(0xFFFF9800) else Color(0xFF4CAF50)
-                                )
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                softWrap = false
                             )
                         }
                     }
                 },
                 actions = {
-                    // Auto-Read Toggle Button
-                    IconButton(
-                        onClick = {
-                            isAutoReadEnabled = !isAutoReadEnabled
-                            sharedPrefs.edit().putBoolean("auto_read_tts", isAutoReadEnabled).apply()
-                            Toast.makeText(
-                                context,
-                                if (isAutoReadEnabled) "เปิดการอ่านออกเสียงอัตโนมัติ (Auto-Read) แล้ว" else "ปิดการอ่านอัตโนมัติแล้ว",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = if (isAutoReadEnabled) Icons.Default.RecordVoiceOver else Icons.Default.VoiceOverOff,
-                                contentDescription = "Auto-Read Toggle",
-                                tint = if (isAutoReadEnabled) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = if (isAutoReadEnabled) "AUTO" else "MANUAL",
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (isAutoReadEnabled) Color(0xFF4CAF50) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
-                        }
-                    }
 
-                    // Native TTS Button (Manual Speak / Stop)
-                    IconButton(
-                        onClick = {
-                            if (isSpeaking) {
-                                ttsManager.stop()
-                            } else {
-                                val triggerJs = """
-                                    (function() {
-                                        if (typeof window.__antigravitySpeakLatest === 'function') {
-                                            window.__antigravitySpeakLatest();
-                                        }
-                                        var iframes = document.querySelectorAll('iframe');
-                                        for (var i = 0; i < iframes.length; i++) {
-                                            try {
-                                                iframes[i].contentWindow.postMessage({ type: 'ANTIGRAVITY_TTS_SPEAK' }, '*');
-                                            } catch(e) {}
-                                        }
-                                    })()
-                                """.trimIndent()
-                                webViewInstance?.evaluateJavascript(triggerJs, null)
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (isSpeaking) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = if (isSpeaking) "Stop Speaking" else "Read Aloud",
-                            tint = if (isSpeaking) Color(0xFFE53935) else MaterialTheme.colorScheme.primary
-                        )
+
+
+                    IconButton(onClick = { showLanguageDialog = true }) {
+                        Text(text = "🌐", fontSize = 18.sp)
                     }
 
                     IconButton(onClick = { webViewInstance?.reload() }) {
@@ -383,16 +343,15 @@ fun AntigravityWebScreen(
                         )
                     }
 
+
+                    // Explicit Unpair & Scan New Machine Button
                     IconButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                            context.startActivity(intent)
-                        }
+                        onClick = { showUnpairDialog = true }
                     ) {
                         Icon(
-                            imageVector = Icons.Default.OpenInBrowser,
-                            contentDescription = "Open in Browser",
-                            tint = MaterialTheme.colorScheme.primary
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = "Unpair and Scan New",
+                            tint = Color(0xFFFFB74D)
                         )
                     }
                 },
@@ -402,6 +361,81 @@ fun AntigravityWebScreen(
             )
         }
     ) { innerPadding ->
+        if (showLanguageDialog) {
+            val currentLang = LocaleHelper.getCurrentLanguage()
+            AlertDialog(
+                onDismissRequest = { showLanguageDialog = false },
+                title = { Text(stringResource(R.string.language), fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(
+                            onClick = {
+                                LocaleHelper.setLanguage(LocaleHelper.LANGUAGE_SYSTEM)
+                                showLanguageDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = (if (currentLang == LocaleHelper.LANGUAGE_SYSTEM) "✓ " else "") + stringResource(R.string.system_default),
+                                fontWeight = if (currentLang == LocaleHelper.LANGUAGE_SYSTEM) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                LocaleHelper.setLanguage(LocaleHelper.LANGUAGE_ENGLISH)
+                                showLanguageDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = (if (currentLang == LocaleHelper.LANGUAGE_ENGLISH) "✓ " else "") + stringResource(R.string.english),
+                                fontWeight = if (currentLang == LocaleHelper.LANGUAGE_ENGLISH) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                LocaleHelper.setLanguage(LocaleHelper.LANGUAGE_THAI)
+                                showLanguageDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = (if (currentLang == LocaleHelper.LANGUAGE_THAI) "✓ " else "") + stringResource(R.string.thai),
+                                fontWeight = if (currentLang == LocaleHelper.LANGUAGE_THAI) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showLanguageDialog = false }) {
+                        Text(stringResource(R.string.close))
+                    }
+                }
+            )
+        }
+        // Confirmation Dialog before unpairing
+        if (showUnpairDialog) {
+            AlertDialog(
+                onDismissRequest = { showUnpairDialog = false },
+                title = { Text(stringResource(R.string.dialog_unpair_title), fontWeight = FontWeight.Bold) },
+                text = { Text(stringResource(R.string.dialog_unpair_desc)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showUnpairDialog = false
+                            onUnpair()
+                        }
+                    ) {
+                        Text(stringResource(R.string.dialog_unpair_confirm), color = Color(0xFFE53935), fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showUnpairDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -416,6 +450,68 @@ fun AntigravityWebScreen(
                     )
                 }
 
+                // Offline Notice Banner
+                AnimatedVisibility(
+                    visible = isOffline,
+                    enter = fadeIn() + slideInVertically(),
+                    exit = fadeOut() + slideOutVertically()
+                ) {
+                    Surface(
+                        color = Color(0xFF374151),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudOff,
+                                    contentDescription = "Offline Mode",
+                                    tint = Color(0xFFFFB74D),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.offline_banner_title),
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                        color = Color(0xFFFFB74D)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.offline_banner_desc),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
+
+                            FilledTonalButton(
+                                onClick = {
+                                    isOffline = false
+                                    isLoading = true
+                                    webViewInstance?.settings?.cacheMode = WebSettings.LOAD_DEFAULT
+                                    webViewInstance?.reload()
+                                },
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = Color(0xFFFFB74D).copy(alpha = 0.2f),
+                                    contentColor = Color(0xFFFFB74D)
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Text(stringResource(R.string.retry), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
                 AndroidView(
                     factory = { ctx ->
                         WebView(ctx).apply {
@@ -427,6 +523,7 @@ fun AntigravityWebScreen(
                             settings.apply {
                                 javaScriptEnabled = true
                                 domStorageEnabled = true
+                                databaseEnabled = true
                                 allowFileAccess = true
                                 allowContentAccess = true
                                 useWideViewPort = true
@@ -438,7 +535,7 @@ fun AntigravityWebScreen(
                                 userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 AntigravityRemote/1.0"
                             }
 
-                            WebView.setWebContentsDebuggingEnabled(true)
+                            WebView.setWebContentsDebuggingEnabled(com.example.antigravityremote.BuildConfig.DEBUG)
 
                             CookieManager.getInstance().setAcceptCookie(true)
                             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
@@ -447,7 +544,9 @@ fun AntigravityWebScreen(
                             class AndroidTtsBridge(private val isAutoRead: () -> Boolean) {
                                 @JavascriptInterface
                                 fun speak(text: String) {
-                                    android.util.Log.d("TtsManager", "AndroidTtsBridge.speak called (length: ${text.length}): ${text.take(80)}")
+                                    if (com.example.antigravityremote.BuildConfig.DEBUG) {
+                                        android.util.Log.d("TtsManager", "AndroidTtsBridge.speak called (length: ${text.length})")
+                                    }
                                     (ctx as? Activity)?.runOnUiThread {
                                         ttsManager.speak(text)
                                     }
@@ -485,12 +584,6 @@ fun AntigravityWebScreen(
                                 override fun onProgressChanged(view: WebView?, newProgress: Int) {
                                     progress = newProgress / 100f
                                     isLoading = newProgress < 100
-                                }
-
-                                override fun onReceivedTitle(view: WebView?, title: String?) {
-                                    if (!title.isNullOrBlank() && !title.startsWith("http")) {
-                                        pageTitle = title
-                                    }
                                 }
 
                                 override fun onShowFileChooser(
@@ -532,9 +625,27 @@ fun AntigravityWebScreen(
 
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     isLoading = false
+                                    isOffline = false
+                                    hasLoadedSuccessfully = true
                                     view?.saveState(webViewState)
                                     CookieManager.getInstance().flush()
                                     view?.evaluateJavascript(ttsScript, null)
+                                }
+
+                                override fun onReceivedError(
+                                    view: WebView?,
+                                    request: WebResourceRequest?,
+                                    error: WebResourceError?
+                                ) {
+                                    super.onReceivedError(view, request, error)
+                                    if (request?.isForMainFrame == true) {
+                                        isLoading = false
+                                        isOffline = true
+                                        // If we already had content loaded previously, keep it from cache without showing blank error
+                                        if (hasLoadedSuccessfully) {
+                                            view?.settings?.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+                                        }
+                                    }
                                 }
 
                                 override fun shouldOverrideUrlLoading(
@@ -560,7 +671,7 @@ fun AntigravityWebScreen(
                 )
             }
 
-            // Floating Speech Player Banner when TTS is active
+
             AnimatedVisibility(
                 visible = isSpeaking,
                 enter = fadeIn() + slideInVertically { it },
@@ -600,12 +711,12 @@ fun AntigravityWebScreen(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "กำลังอ่านออกเสียงให้ฟัง...",
+                                text = stringResource(R.string.tts_reading),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "ระบบอ่านออกเสียงผ่านลำโพงมือถือ (TH / EN)",
+                                text = stringResource(R.string.tts_subtitle),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
@@ -621,7 +732,7 @@ fun AntigravityWebScreen(
                             ),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("หยุด", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.tts_stop), fontWeight = FontWeight.Bold)
                         }
                     }
                 }

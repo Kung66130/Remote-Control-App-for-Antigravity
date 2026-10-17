@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Antigravity Remote</string>
+    <string name="app_subtitle">เชื่อมต่อและติดตามงานผ่านมือถือได้ทุกที่</string>
+
+    <!-- Navigation & Common -->
+    <string name="cancel">ยกเลิก</string>
+    <string name="save">บันทึก</string>
+    <string name="close">ปิด</string>
+    <string name="refresh">รีเฟรช</string>
+    <string name="sign_out">ออกจากระบบ</string>
+    <string name="retry">ลองใหม่</string>
+    <string name="language">ภาษา / Language</string>
+    <string name="system_default">ตามค่าเริ่มต้นของระบบ (System Default)</string>
+    <string name="english">English</string>
+    <string name="thai">ไทย (Thai)</string>
+
+    <!-- Google Auth Screen -->
+    <string name="paired_computer_title">คอมพิวเตอร์ที่จับคู่ไว้</string>
+    <string name="ready_to_connect">พร้อมเชื่อมต่อโดยตรง</string>
+    <string name="btn_connect_now">เชื่อมต่อทันที</string>
+    <string name="connect_your_computer">เชื่อมต่อคอมพิวเตอร์ของคุณ</string>
+    <string name="open_antigravity_instruction">ทำตาม 3 ขั้นตอนง่ายๆ ด้านล่าง</string>
+    <string name="btn_scan_qr_screen">สแกน QR Code บนจอคอม</string>
+    <string name="btn_paste_link">วางลิงก์และเชื่อมต่อ</string>
+    <string name="btn_how_to_connect">วิธีเชื่อมต่อคอมพิวเตอร์?</string>
+    <string name="guide_title">วิธีเชื่อมต่อกับคอมพิวเตอร์</string>
+    <string name="guide_step_1_title">1. เปิด Antigravity 2.0 บนคอม</string>
+    <string name="guide_step_1_desc">เปิดโปรแกรม Antigravity 2.0 บนคอมพิวเตอร์ของคุณ</string>
+    <string name="guide_step_2_title">2. Settings ⚙️ ➔ Application ➔ Remote Control</string>
+    <string name="guide_step_2_desc">กด Settings (รูปเฟือง ⚙️) ➔ เลือก Application ➔ กดเปิดสวิตช์ \'Enable Remote Control\' เพื่อให้หน้าจอแสดง QR Code</string>
+    <string name="guide_step_3_title">3. สแกน QR หรือ วางลิงก์</string>
+    <string name="guide_step_3_desc">กด \'สแกน QR Code บนจอคอม\' เพื่อสแกน หรือกด \'copy link\' ในคอม แล้วมากดปุ่ม \'วางลิงก์และเชื่อมต่อ\' ในแอพนี้</string>
+    <string name="guide_understand">เข้าใจแล้ว</string>
+    <string name="toast_latest_link">เชื่อมต่อด้วยลิงก์ Antigravity ล่าสุด</string>
+    <string name="paste_dialog_title">วางลิงก์ Antigravity</string>
+    <string name="paste_dialog_desc">วางลิงก์ที่คัดลอกมาจากคอมพิวเตอร์ของคุณ (ปุ่ม \'copy link\' ในหน้า Remote Control):</string>
+    <string name="paste_dialog_hint">https://...</string>
+    <string name="btn_paste_from_clipboard">วางจากคลิปบอร์ด</string>
+    <string name="toast_no_link_found">กรุณากรอกหรือวางลิงก์ที่ถูกต้อง</string>
+    <string name="privacy_policy">นโยบายความเป็นส่วนตัว</string>
+    <string name="btn_about_contact">ติดต่อเรา</string>
+    <string name="about_dialog_title">เกี่ยวกับและติดต่อเรา</string>
+    <string name="about_app_desc">Antigravity Remote แอพควบคุมและติดตามงานผ่านมือถือได้ทุกที่</string>
+    <string name="contact_email_title">ฝ่ายสนับสนุนและข้อเสนอแนะ</string>
+    <string name="contact_email_desc">หากมีข้อสงสัย ต้องการความช่วยเหลือ หรือแนะนำติชม สามารถส่งอีเมลถึงผู้พัฒนาได้โดยตรง:</string>
+    <string name="btn_send_email">ส่งอีเมล</string>
+    <string name="btn_copy_email">คัดลอกอีเมล</string>
+    <string name="toast_email_copied">คัดลอกอีเมลลงคลิปบอร์ดแล้ว</string>
+
+    <!-- Device Discovery Screen -->
+    <string name="my_computers">คอมพิวเตอร์และเอเจนต์ของฉัน</string>
+    <string name="scanning">กำลังค้นหา...</string>
+    <string name="rescan">ค้นหาใหม่</string>
+    <string name="no_devices_found">ไม่พบเครื่องคอมพิวเตอร์ที่เปิด Antigravity อยู่</string>
+    <string name="device_offline">ออฟไลน์</string>
+    <string name="device_online">ออนไลน์</string>
+    <string name="btn_connect">เชื่อมต่อ</string>
+    <string name="manual_ip_port">กรอก IP / ตั้งค่าเชื่อมต่อโดยตรง</string>
+
+    <!-- Web Remote Screen -->
+    <string name="offline_banner_title">โหมดออฟไลน์ (กำลังอ่านข้อมูลจากแคช)</string>
+    <string name="offline_banner_desc">คอมพิวเตอร์ปิดอยู่หรือขาดการเชื่อมต่อ คุณยังคงอ่านประวัติเดิมได้</string>
+    <string name="dialog_unpair_title">ยกเลิกการจับคู่เครื่องนี้?</string>
+    <string name="dialog_unpair_desc">หากยกเลิกการจับคู่ คุณจะต้องสแกน QR Code ใหม่เมื่อต้องการเชื่อมต่อกับคอมพิวเตอร์เครื่องนี้อีกครั้ง</string>
+    <string name="dialog_unpair_confirm">ยกเลิกการจับคู่ (สแกนใหม่)</string>
+    <string name="tts_reading">กำลังอ่านออกเสียงให้ฟัง...</string>
+    <string name="tts_subtitle">ระบบอ่านออกเสียงผ่านลำโพงมือถือ (TH / EN)</string>
+    <string name="tts_stop">หยุด</string>
+    <string name="tts_auto_read_on">เปิดโหมดอ่านออกเสียงอัตโนมัติแล้ว</string>
+    <string name="tts_auto_read_off">ปิดโหมดอ่านออกเสียงอัตโนมัติแล้ว</string>
+    <string name="open_in_browser">เปิดในเบราว์เซอร์</string>
+</resources>

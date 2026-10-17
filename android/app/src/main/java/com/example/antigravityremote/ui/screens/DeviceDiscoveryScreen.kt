@@ -45,9 +45,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +60,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.antigravityremote.R
+import com.example.antigravityremote.util.LocaleHelper
 import com.example.antigravityremote.model.DiscoveredDevice
 import com.example.antigravityremote.ui.viewmodel.RemoteViewModel
 
@@ -69,6 +76,60 @@ fun DeviceDiscoveryScreen(
     val user by viewModel.currentUser.collectAsState()
     val devices by viewModel.discoveredDevices.collectAsState()
     val isScanning by viewModel.isScanning.collectAsState()
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
+    if (showLanguageDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = { Text(stringResource(R.string.language), fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val currentLang = LocaleHelper.getCurrentLanguage()
+                    TextButton(
+                        onClick = {
+                            LocaleHelper.setLanguage(LocaleHelper.LANGUAGE_SYSTEM)
+                            showLanguageDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = (if (currentLang == LocaleHelper.LANGUAGE_SYSTEM) "✓ " else "") + stringResource(R.string.system_default),
+                            fontWeight = if (currentLang == LocaleHelper.LANGUAGE_SYSTEM) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            LocaleHelper.setLanguage(LocaleHelper.LANGUAGE_ENGLISH)
+                            showLanguageDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = (if (currentLang == LocaleHelper.LANGUAGE_ENGLISH) "✓ " else "") + stringResource(R.string.english),
+                            fontWeight = if (currentLang == LocaleHelper.LANGUAGE_ENGLISH) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                    TextButton(
+                        onClick = {
+                            LocaleHelper.setLanguage(LocaleHelper.LANGUAGE_THAI)
+                            showLanguageDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = (if (currentLang == LocaleHelper.LANGUAGE_THAI) "✓ " else "") + stringResource(R.string.thai),
+                            fontWeight = if (currentLang == LocaleHelper.LANGUAGE_THAI) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguageDialog = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        )
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize().statusBarsPadding(),
@@ -104,17 +165,20 @@ fun DeviceDiscoveryScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showLanguageDialog = true }) {
+                        Text(text = "🌐", fontSize = 18.sp)
+                    }
                     IconButton(onClick = { viewModel.scanDevices() }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "Rescan",
+                            contentDescription = stringResource(R.string.rescan),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     IconButton(onClick = { viewModel.signOut() }) {
                         Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "Sign Out",
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = stringResource(R.string.sign_out),
                             tint = MaterialTheme.colorScheme.outline
                         )
                     }
@@ -138,7 +202,7 @@ fun DeviceDiscoveryScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "My Computers & Agents",
+                    text = stringResource(R.string.my_computers),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -150,7 +214,7 @@ fun DeviceDiscoveryScreen(
                         CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Scanning...",
+                            text = stringResource(R.string.scanning),
                             style = MaterialTheme.typography.labelSmall.copy(color = MaterialTheme.colorScheme.primary)
                         )
                     }
@@ -274,7 +338,7 @@ fun DeviceCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "ONLINE",
+                            text = stringResource(R.string.device_online),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 color = Color(0xFF4CAF50),
                                 fontWeight = FontWeight.Bold,
@@ -329,7 +393,7 @@ fun DeviceCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Connect to Agent",
+                    text = stringResource(R.string.btn_connect),
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )

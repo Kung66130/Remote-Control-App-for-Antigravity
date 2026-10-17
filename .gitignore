@@ -58,6 +58,13 @@ __pycache__/
 *.pyo
 *.pyd
 .env
+keystore.properties
+*.jks
+*.keystore
+release-private/
+service-account.json
+node_modules/
+package-lock.json
 .venv
 env/
 venv/
@@ -70,4 +77,3 @@ Antigravity/
 
 # Ensure all Android resources are tracked
 !android/app/src/main/res/**
-

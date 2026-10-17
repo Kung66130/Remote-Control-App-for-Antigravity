@@ -1,5 +1,12 @@
 package com.example.antigravityremote
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.Crossfade
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,6 +28,15 @@ fun MainNavigation(
 ) {
     val activeWebUrl by viewModel.activeWebUrl.collectAsState()
     var isScanningQr by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val cameraPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        isScanningQr = granted
+        if (!granted) {
+            Toast.makeText(context, "กรุณาอนุญาตกล้องเพื่อสแกน QR Code หรือใช้การวางลิงก์", Toast.LENGTH_LONG).show()
+        }
+    }
 
     Crossfade(
         targetState = when {
@@ -35,7 +51,8 @@ fun MainNavigation(
                 activeWebUrl?.let { url ->
                     com.example.antigravityremote.ui.screens.AntigravityWebScreen(
                         url = url,
-                        onBack = { viewModel.unpairAndScanNew() }
+                        onBack = { viewModel.closeAntigravityUrl() },
+                        onUnpair = { viewModel.unpairAndScanNew() }
                     )
                 }
             }
@@ -51,7 +68,13 @@ fun MainNavigation(
             "CONNECT" -> {
                 com.example.antigravityremote.ui.screens.GoogleAuthScreen(
                     viewModel = viewModel,
-                    onScanQrClick = { isScanningQr = true }
+                    onScanQrClick = {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                            isScanningQr = true
+                        } else {
+                            cameraPermission.launch(Manifest.permission.CAMERA)
+                        }
+                    }
                 )
             }
         }

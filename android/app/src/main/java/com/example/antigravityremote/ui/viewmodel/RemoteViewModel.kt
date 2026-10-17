@@ -112,7 +112,15 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
 
     fun unpairAndScanNew() {
         prefs.edit().remove(PREF_SAVED_REMOTE_URL).apply()
+        antigravityUrlInput.value = ""
         _activeWebUrl.value = null
+        try {
+            android.webkit.CookieManager.getInstance().removeAllCookies(null)
+            android.webkit.CookieManager.getInstance().flush()
+            android.webkit.WebStorage.getInstance().deleteAllData()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear cookies on unpair", e)
+        }
     }
 
     fun handleScannedQrCode(qrData: String) {

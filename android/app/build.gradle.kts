@@ -1,22 +1,41 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
 }
 
+val uploadSigningFile = rootProject.file("keystore.properties")
+val uploadSigning = Properties().apply {
+    if (uploadSigningFile.exists()) uploadSigningFile.inputStream().use { load(it) }
+}
+
 android {
     namespace = "com.example.antigravityremote"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.example.antigravityremote"
+        applicationId = "com.kunxxslabs.antigravityremote"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+    }
+
+    signingConfigs {
+        if (uploadSigningFile.exists()) {
+            create("upload") {
+                storeFile = rootProject.file(uploadSigning.getProperty("storeFile"))
+                storePassword = uploadSigning.getProperty("storePassword")
+                keyAlias = uploadSigning.getProperty("keyAlias")
+                keyPassword = uploadSigning.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
+            if (uploadSigningFile.exists()) signingConfig = signingConfigs.getByName("upload")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -28,7 +47,7 @@ android {
     buildFeatures {
       compose = true
       aidl = false
-      buildConfig = false
+      buildConfig = true
       shaders = false
     }
 
