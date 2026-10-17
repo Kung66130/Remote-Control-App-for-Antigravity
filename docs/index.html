@@ -1,30 +1,71 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - Antigravity Remote</title>
     <style>
+        :root {
+            --primary: #2563eb;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.7;
-            color: #1e293b;
-            background-color: #f8fafc;
+            color: var(--text);
+            background-color: var(--bg);
             max-width: 800px;
             margin: 0 auto;
-            padding: 30px 20px;
+            padding: 24px 16px;
         }
         .container {
-            background: #ffffff;
+            background: var(--card-bg);
             padding: 36px 32px;
             border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border);
+        }
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+        }
+        .lang-switch {
+            display: inline-flex;
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 3px;
+            border: 1px solid #cbd5e1;
+        }
+        .lang-btn {
+            border: none;
+            background: none;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(37,99,235,0.2);
         }
         h1 {
             color: #0f172a;
             font-size: 26px;
-            margin-bottom: 8px;
+            margin: 0 0 6px 0;
         }
         h2 {
             color: #1e293b;
@@ -34,7 +75,7 @@
             font-size: 18px;
         }
         .last-updated {
-            color: #64748b;
+            color: var(--text-muted);
             font-size: 14px;
             margin-bottom: 24px;
         }
@@ -45,57 +86,141 @@
             margin-bottom: 8px;
         }
         .footer {
-            margin-top: 32px;
+            margin-top: 36px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
             font-size: 13px;
             color: #94a3b8;
             text-align: center;
         }
         a {
-            color: #2563eb;
+            color: var(--primary);
             text-decoration: none;
         }
         a:hover {
             text-decoration: underline;
         }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>นโยบายความเป็นส่วนตัว (Privacy Policy)</h1>
-        <p class="last-updated">ปรับปรุงล่าสุดเมื่อ: 17 กันยายน 2026 | ผู้พัฒนา: Kunxxs Labs</p>
+        <div class="header-bar">
+            <div>
+                <h1 id="page-title">Privacy Policy</h1>
+                <div class="last-updated" id="last-updated-text">Last Updated: October 2026 | Developer: Kunxxs Labs</div>
+            </div>
+            <div class="lang-switch">
+                <button class="lang-btn active" id="btn-en" onclick="setLang('en')">English</button>
+                <button class="lang-btn" id="btn-th" onclick="setLang('th')">ไทย</button>
+            </div>
+        </div>
 
-        <p>ยินดีต้อนรับสู่ <strong>Antigravity Remote</strong> เราเคารพและให้ความสำคัญกับความเป็นส่วนตัวของคุณ นโยบายนี้อธิบายถึงวิธีที่แอปพลิเคชันจัดการและปกป้องข้อมูลของคุณเมื่อใช้งานแอปพลิเคชัน</p>
+        <!-- ENGLISH CONTENT -->
+        <div id="content-en" class="content-section active">
+            <p>Welcome to <strong>Antigravity Remote</strong>. We respect your privacy and are committed to protecting your personal data. This privacy policy explains how our application manages and safeguards your information when you use our services.</p>
 
-        <h2>1. การเชื่อมต่อและข้อมูลการใช้งาน (Connection & Remote Content)</h2>
-        <p>Antigravity Remote ทำหน้าที่เป็นเครื่องมือแสดงผลและควบคุมระยะไกล (Client Interface) เชื่อมต่อไปยังโปรแกรม Google Antigravity บนเครื่องคอมพิวเตอร์ของคุณ:</p>
-        <ul>
-            <li><strong>URL หรือ QR Code เชื่อมต่อ:</strong> แอปจะบันทึก URL ล่าสุดที่คุณเลือกเชื่อมต่อไว้ในหน่วยความจำของอุปกรณ์ (Private Local Storage) เพื่อความสะดวกในการเชื่อมต่อครั้งถัดไป โดยไม่มีการส่งข้อมูลนี้ไปยังเซิร์ฟเวอร์ภายนอก</li>
-            <li><strong>ข้อมูลคำสั่งและข้อความแชท:</strong> คำสั่ง ข้อความ หรือรูปภาพที่คุณส่ง จะถูกส่งตรงไปยังเซสชันของโปรแกรมบนเครื่องคอมพิวเตอร์ของคุณผ่านระบบ Secure Tunnel ที่จัดเตรียมโดย Google Antigravity</li>
-            <li><strong>คุกกี้และแคช (Cookies & Cache):</strong> ตัวแสดงผลเว็บ (WebView) อาจจัดเก็บแคชและคุกกี้บนอุปกรณ์ของคุณ เพื่อให้สามารถเปิดอ่านประวัติการสนทนาในโหมดออฟไลน์ได้</li>
-        </ul>
+            <h2>1. Connection & Remote Content</h2>
+            <p>Antigravity Remote acts as a secure client interface connecting directly to your Google Antigravity workspaces running on your host computer:</p>
+            <ul>
+                <li><strong>Connection URL / QR Code:</strong> The app stores your recent connection URLs locally on your device (Private Local Storage) solely for quick reconnection. This data is never sent to any external server.</li>
+                <li><strong>Prompts, Commands, & Messages:</strong> All interactions, messages, and terminal commands are transmitted directly between your mobile device and your computer session via secure Google Antigravity channels.</li>
+                <li><strong>Cookies & Local Cache:</strong> The internal WebView may store local cache and session cookies on your device to support offline browsing of cached workspaces.</li>
+            </ul>
 
-        <h2>2. สิทธิ์การเข้าถึงอุปกรณ์ (Device Permissions)</h2>
-        <ul>
-            <li><strong>กล้องถ่ายภาพ (Camera):</strong> ใช้เฉพาะเมื่อคุณกดปุ่มสแกน QR Code เพื่อเชื่อมต่อกับคอมพิวเตอร์ ระบบจะประมวลผลภาพ QR Code บนตัวเครื่องโดยตรง และไม่มีการบันทึกหรืออัปโหลดภาพจากกล้องออกไปภายนอก</li>
-            <li><strong>การเลือกไฟล์และรูปภาพ (Files & Photos):</strong> ใช้ระบบเลือกไฟล์มาตรฐานของ Android (System File Picker) เพื่อให้คุณเลือกรูปภาพหรือไฟล์ที่ต้องการส่งให้ AI บนคอมพิวเตอร์วิเคราะห์ โดยแอปไม่มีการขอสิทธิ์เข้าถึงคลังภาพทั้งหมด</li>
-            <li><strong>คลิปบอร์ด (Clipboard):</strong> ใช้เมื่อคุณแตะปุ่ม "วางลิงก์ที่คัดลอกมา" เพื่ออ่าน URL การเชื่อมต่อที่คัดลอกมาจากคอมพิวเตอร์</li>
-            <li><strong>ระบบแปลงข้อความเป็นเสียง (Text-to-Speech):</strong> ใช้ระบบ TTS ของตัวเครื่อง Android เพื่ออ่านข้อความสรุปจาก AI ให้คุณฟังผ่านลำโพง</li>
-        </ul>
+            <h2>2. Device Permissions</h2>
+            <ul>
+                <li><strong>Camera (android.permission.CAMERA):</strong> Used exclusively when you tap "Scan QR Code" to pair with your computer. The QR code image is processed locally on your device using ML Kit; no photos or videos are captured, stored, or transmitted.</li>
+                <li><strong>System File Picker:</strong> Uses the standard Android System File Picker when you choose to upload an image or file for AI analysis. The app does not request or require broad storage access.</li>
+                <li><strong>Clipboard:</strong> Accessed only when you tap "Paste Link" to read the connection URL you copied.</li>
+                <li><strong>Text-to-Speech (TTS):</strong> Utilizes your device's built-in Android Text-to-Speech engine to read aloud AI assistant responses through your device speaker.</li>
+            </ul>
 
-        <h2>3. การจัดเก็บและการลบข้อมูล (Data Storage & Deletion)</h2>
-        <p>ข้อมูลการเชื่อมต่อและแคชจะถูกบันทึกไว้ในอุปกรณ์ของคุณเท่านั้น คุณสามารถลบข้อมูลทั้งหมดได้ตลอดเวลาโดยการไปที่ <strong>การตั้งค่าของ Android &gt; แอปพลิเคชัน &gt; Antigravity Remote &gt; ล้างข้อมูล (Clear Data)</strong> หรือถอนการติดตั้งแอป</p>
+            <h2>3. Data Storage & Deletion</h2>
+            <p>All configuration data and cached sessions remain strictly on your device. You can completely erase all stored data at any time by going to <strong>Android Settings &gt; Apps &gt; Antigravity Remote &gt; Clear Data</strong>, or by uninstalling the application.</p>
 
-        <h2>4. โฆษณาและการวิเคราะห์ (Advertising & Analytics)</h2>
-        <p>แอปพลิเคชันนี้ <strong>ไม่มีการติดตั้ง SDK โฆษณา (No Ads)</strong> และ <strong>ไม่มีการเก็บสถิติการใช้งานส่วนบุคคล (No Tracking/Analytics SDK)</strong> ใดๆ ทั้งสิ้น</p>
+            <h2>4. Advertising & Analytics</h2>
+            <p>Antigravity Remote contains <strong>NO advertisements (No Ads SDK)</strong> and <strong>NO third-party tracking or behavioral analytics SDKs</strong>. We do not sell or monetize user data.</p>
 
-        <h2>5. ช่องทางการติดต่อ (Contact Us)</h2>
-        <p>หากมีข้อสงสัยหรือข้อเสนอแนะเกี่ยวกับนโยบายความเป็นส่วนตัวนี้ สามารถติดต่อเราได้ที่:<br>
-        อีเมล: <a href="mailto:kung66130@gmail.com">kung66130@gmail.com</a><br>
-        ผู้พัฒนา: Kunxxs Labs</p>
+            <h2>5. Contact Information</h2>
+            <p>If you have any questions or concerns regarding this Privacy Policy, please contact us at:<br>
+            Email: <a href="mailto:kung66130@gmail.com">kung66130@gmail.com</a><br>
+            Developer: Kunxxs Labs</p>
+        </div>
+
+        <!-- THAI CONTENT -->
+        <div id="content-th" class="content-section">
+            <p>ยินดีต้อนรับสู่ <strong>Antigravity Remote</strong> เราเคารพและให้ความสำคัญกับความเป็นส่วนตัวของคุณ นโยบายนี้อธิบายถึงวิธีที่แอปพลิเคชันจัดการและปกป้องข้อมูลของคุณเมื่อใช้งานแอปพลิเคชัน</p>
+
+            <h2>1. การเชื่อมต่อและข้อมูลการใช้งาน (Connection & Remote Content)</h2>
+            <p>Antigravity Remote ทำหน้าที่เป็นเครื่องมือแสดงผลและควบคุมระยะไกล (Client Interface) เชื่อมต่อไปยังโปรแกรม Google Antigravity บนเครื่องคอมพิวเตอร์ของคุณ:</p>
+            <ul>
+                <li><strong>URL หรือ QR Code เชื่อมต่อ:</strong> แอปจะบันทึก URL ล่าสุดที่คุณเลือกเชื่อมต่อไว้ในหน่วยความจำของอุปกรณ์ (Private Local Storage) เพื่อความสะดวกในการเชื่อมต่อครั้งถัดไป โดยไม่มีการส่งข้อมูลนี้ไปยังเซิร์ฟเวอร์ภายนอก</li>
+                <li><strong>ข้อมูลคำสั่งและข้อความแชท:</strong> คำสั่ง ข้อความ หรือรูปภาพที่คุณส่ง จะถูกส่งตรงไปยังเซสชันของโปรแกรมบนเครื่องคอมพิวเตอร์ของคุณผ่านระบบ Secure Tunnel ที่จัดเตรียมโดย Google Antigravity</li>
+                <li><strong>คุกกี้และแคช (Cookies & Cache):</strong> ตัวแสดงผลเว็บ (WebView) อาจจัดเก็บแคชและคุกกี้บนอุปกรณ์ของคุณ เพื่อให้สามารถเปิดอ่านประวัติการสนทนาในโหมดออฟไลน์ได้</li>
+            </ul>
+
+            <h2>2. สิทธิ์การเข้าถึงอุปกรณ์ (Device Permissions)</h2>
+            <ul>
+                <li><strong>กล้องถ่ายภาพ (Camera):</strong> ใช้เฉพาะเมื่อคุณกดปุ่มสแกน QR Code เพื่อเชื่อมต่อกับคอมพิวเตอร์ ระบบจะประมวลผลภาพ QR Code บนตัวเครื่องโดยตรง และไม่มีการบันทึกหรืออัปโหลดภาพจากกล้องออกไปภายนอก</li>
+                <li><strong>การเลือกไฟล์และรูปภาพ (Files & Photos):</strong> ใช้ระบบเลือกไฟล์มาตรฐานของ Android (System File Picker) เพื่อให้คุณเลือกรูปภาพหรือไฟล์ที่ต้องการส่งให้ AI บนคอมพิวเตอร์วิเคราะห์ โดยแอปไม่มีการขอสิทธิ์เข้าถึงคลังภาพทั้งหมด</li>
+                <li><strong>คลิปบอร์ด (Clipboard):</strong> ใช้เมื่อคุณแตะปุ่ม "วางลิงก์และเชื่อมต่อ" เพื่ออ่าน URL การเชื่อมต่อที่คัดลอกมาจากคอมพิวเตอร์</li>
+                <li><strong>ระบบแปลงข้อความเป็นเสียง (Text-to-Speech):</strong> ใช้ระบบ TTS ของตัวเครื่อง Android เพื่ออ่านข้อความสรุปจาก AI ให้คุณฟังผ่านลำโพง</li>
+            </ul>
+
+            <h2>3. การจัดเก็บและการลบข้อมูล (Data Storage & Deletion)</h2>
+            <p>ข้อมูลการเชื่อมต่อและแคชจะถูกบันทึกไว้ในอุปกรณ์ของคุณเท่านั้น คุณสามารถลบข้อมูลทั้งหมดได้ตลอดเวลาโดยการไปที่ <strong>การตั้งค่าของ Android &gt; แอปพลิเคชัน &gt; Antigravity Remote &gt; ล้างข้อมูล (Clear Data)</strong> หรือถอนการติดตั้งแอป</p>
+
+            <h2>4. โฆษณาและการวิเคราะห์ (Advertising & Analytics)</h2>
+            <p>แอปพลิเคชันนี้ <strong>ไม่มีการติดตั้ง SDK โฆษณา (No Ads)</strong> และ <strong>ไม่มีการเก็บสถิติการใช้งานส่วนบุคคล (No Tracking/Analytics SDK)</strong> ใดๆ ทั้งสิ้น</p>
+
+            <h2>5. ช่องทางการติดต่อ (Contact Us)</h2>
+            <p>หากมีข้อสงสัยหรือข้อเสนอแนะเกี่ยวกับนโยบายความเป็นส่วนตัวนี้ สามารถติดต่อเราได้ที่:<br>
+            อีเมล: <a href="mailto:kung66130@gmail.com">kung66130@gmail.com</a><br>
+            ผู้พัฒนา: Kunxxs Labs</p>
+        </div>
 
         <div class="footer">
             &copy; 2026 Kunxxs Labs. All rights reserved.
         </div>
     </div>
+
+    <script>
+        function setLang(lang) {
+            document.getElementById('content-en').classList.remove('active');
+            document.getElementById('content-th').classList.remove('active');
+            document.getElementById('btn-en').classList.remove('active');
+            document.getElementById('btn-th').classList.remove('active');
+
+            if (lang === 'th') {
+                document.getElementById('content-th').classList.add('active');
+                document.getElementById('btn-th').classList.add('active');
+                document.getElementById('page-title').innerText = 'นโยบายความเป็นส่วนตัว (Privacy Policy)';
+                document.getElementById('last-updated-text').innerText = 'ปรับปรุงล่าสุดเมื่อ: ตุลาคม 2026 | ผู้พัฒนา: Kunxxs Labs';
+                document.documentElement.lang = 'th';
+            } else {
+                document.getElementById('content-en').classList.add('active');
+                document.getElementById('btn-en').classList.add('active');
+                document.getElementById('page-title').innerText = 'Privacy Policy';
+                document.getElementById('last-updated-text').innerText = 'Last Updated: October 2026 | Developer: Kunxxs Labs';
+                document.documentElement.lang = 'en';
+            }
+        }
+
+        // Auto-detect browser/system language
+        (function() {
+            var userLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+            if (userLang.indexOf('th') === 0) {
+                setLang('th');
+            } else {
+                setLang('en');
+            }
+        })();
+    </script>
 </body>
 </html>
