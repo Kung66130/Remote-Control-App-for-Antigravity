@@ -45,6 +45,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.VolumeUp
@@ -343,6 +344,24 @@ fun AntigravityWebScreen(
                         )
                     }
 
+                    IconButton(
+                        onClick = {
+                            try {
+                                val targetUrl = webViewInstance?.url ?: url
+                                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl))
+                                context.startActivity(browserIntent)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Cannot open browser", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.OpenInBrowser,
+                            contentDescription = stringResource(R.string.open_in_browser),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
 
                     // Explicit Unpair & Scan New Machine Button
                     IconButton(
@@ -532,7 +551,7 @@ fun AntigravityWebScreen(
                                 displayZoomControls = false
                                 mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                                 cacheMode = WebSettings.LOAD_DEFAULT
-                                userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 AntigravityRemote/1.0"
+                                userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
                             }
 
                             WebView.setWebContentsDebuggingEnabled(com.example.antigravityremote.BuildConfig.DEBUG)
@@ -658,7 +677,8 @@ fun AntigravityWebScreen(
 
                             if (!webViewState.isEmpty) {
                                 restoreState(webViewState)
-                            } else {
+                            }
+                            if (this.url.isNullOrBlank() || this.url == "about:blank") {
                                 loadUrl(url)
                             }
                             webViewInstance = this
@@ -666,6 +686,9 @@ fun AntigravityWebScreen(
                     },
                     update = { view ->
                         webViewInstance = view
+                        if (view.url.isNullOrBlank() || view.url == "about:blank") {
+                            view.loadUrl(url)
+                        }
                     },
                     modifier = Modifier.fillMaxSize()
                 )

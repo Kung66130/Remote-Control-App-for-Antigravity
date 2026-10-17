@@ -463,7 +463,7 @@ fun GoogleAuthScreen(
         }
 
         // QUICK RECONNECT CARD (If already paired with a computer)
-        if (antigravityUrl.isNotBlank()) {
+        if (antigravityUrl.isNotBlank() && !antigravityUrl.contains("accounts.google.com")) {
             val displayHost = remember(antigravityUrl) {
                 try {
                     val uri = Uri.parse(antigravityUrl)

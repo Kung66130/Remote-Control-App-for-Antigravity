@@ -4,7 +4,7 @@ import path from 'path';
 
 const PACKAGE_NAME = 'com.kunxxslabs.antigravityremote';
 const SERVICE_ACCOUNT_KEY = './service-account.json';
-const AAB_FILE_PATH = './release/Antigravity-Remote-1.1.aab';
+const AAB_FILE_PATH = './release/Antigravity-Remote-1.2.aab';
 
 async function publishToPlayStore() {
     console.log('🚀 Starting Automated Play Store Handoff...');
@@ -40,14 +40,14 @@ async function publishToPlayStore() {
         const versionCode = bundleRes.data.versionCode;
         console.log(`🎉 AAB Uploaded Successfully! Version Code: ${versionCode}`);
 
-        // 4. Assign to Internal Testing Track
-        console.log(`🚀 Assigning version ${versionCode} to Internal Testing Track...`);
+        // 4. Assign to Production Track
+        console.log(`🚀 Assigning version ${versionCode} to Production Track...`);
         await play.edits.tracks.update({
             packageName: PACKAGE_NAME,
             editId: editId,
-            track: 'internal',
+            track: 'production',
             requestBody: {
-                track: 'internal',
+                track: 'production',
                 releases: [
                     {
                         versionCodes: [versionCode.toString()],
@@ -55,11 +55,11 @@ async function publishToPlayStore() {
                         releaseNotes: [
                             {
                                 language: 'th-TH',
-                                text: 'เวอร์ชัน 1.1: เพิ่มคู่มือการเชื่อมต่อ 3 ขั้นตอนตรงตาม Antigravity 2.0, หน้าต่างวางลิงก์เชื่อมต่อ (Paste Link Dialog), ปุ่มติดต่อเรา (Contact Us) และปรับปรุงระบบสลับภาษาให้สมบูรณ์ยิ่งขึ้น',
+                                text: 'เวอร์ชัน 1.2: แก้ไขปัญหาหน้าจอดำ (Blank Screen) หลังสแกน QR Code จากคอมพิวเตอร์, ปรับปรุงระบบแปลงและเชื่อมต่อ Antigravity URL อัตโนมัติ, เพิ่มปุ่ม Open in Browser สำหรับเปิดในเบราว์เซอร์หลัก',
                             },
                             {
                                 language: 'en-US',
-                                text: 'v1.1: Added 3-step PC connection guide for Antigravity 2.0, Paste Link dialog with clipboard validation, Contact Us dialog, and bilingual support improvements.',
+                                text: 'v1.2: Fix blank screen issue when connecting via PC QR code, automatically resolve and connect to Google Antigravity URL, and add Open in Browser shortcut in app bar.',
                             },
                         ],
                     },

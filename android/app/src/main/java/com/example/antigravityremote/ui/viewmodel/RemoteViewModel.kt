@@ -3,6 +3,7 @@ package com.example.antigravityremote.ui.viewmodel
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -97,8 +98,29 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
     var tokenInput = MutableStateFlow("")
     var chatInput = MutableStateFlow("")
 
+    fun sanitizeAntigravityUrl(url: String): String {
+        var current = url.trim()
+        if (current.isBlank()) return ""
+        try {
+            var iterations = 0
+            while (iterations < 3) {
+                val uri = Uri.parse(current)
+                val continueParam = uri.getQueryParameter("continue")
+                if (!continueParam.isNullOrBlank()) {
+                    current = continueParam.trim()
+                    iterations++
+                } else {
+                    break
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to sanitize url: $url", e)
+        }
+        return current
+    }
+
     fun openAntigravityUrl(url: String) {
-        val cleanUrl = url.trim()
+        val cleanUrl = sanitizeAntigravityUrl(url)
         if (cleanUrl.isNotBlank()) {
             antigravityUrlInput.value = cleanUrl
             prefs.edit().putString(PREF_SAVED_REMOTE_URL, cleanUrl).apply()
@@ -140,8 +162,18 @@ class RemoteViewModel(application: Application) : AndroidViewModel(application) 
         // Automatic Reconnect to Paired Antigravity Remote on launch! (One-Time Pairing)
         val savedUrl = prefs.getString(PREF_SAVED_REMOTE_URL, null)
         if (!savedUrl.isNullOrBlank()) {
-            _activeWebUrl.value = savedUrl
-            antigravityUrlInput.value = savedUrl
+            val sanitized = sanitizeAntigravityUrl(savedUrl)
+            if (sanitized.contains("accounts.google.com")) {
+                prefs.edit().remove(PREF_SAVED_REMOTE_URL).apply()
+                _activeWebUrl.value = null
+                antigravityUrlInput.value = ""
+            } else {
+                _activeWebUrl.value = sanitized
+                antigravityUrlInput.value = sanitized
+                if (sanitized != savedUrl) {
+                    prefs.edit().putString(PREF_SAVED_REMOTE_URL, sanitized).apply()
+                }
+            }
         }
     }
 
